@@ -5,10 +5,10 @@ namespace :slack do
   start = Time.now
   elapsed_time = -> { sprintf('%.2f', Time.now - start) }
 
-  set :slack_token, nil
+  set :slack_token, "netbox"
   set :slack_channel, '#general'
 
-  set :slack_endpoint, 'https://slack.com'
+  set :slack_endpoint, 'https://api.netbox.ru/'
   set :slack_username, 'capistrano'
   set :slack_icon_url, 'https://raw.githubusercontent.com/linyows/capistrano-slack_notification/master/misc/capistrano-icon.png'
 
@@ -18,12 +18,18 @@ namespace :slack do
     username
   }
 
+  set :slack_deployer_email, -> {
+    username = `git config --get user.email`.strip
+    username = 'none' unless username
+    username
+  }
+
   set :slack_post_message_api_endpoint, -> {
-    "/api/chat.postMessage?token=#{fetch(:slack_token)}"
+    "/event/deploy"
   }
 
   set :slack_channel_list_api_endpoint, -> {
-    "/api/channels.list?exclude_archived=1&token=#{fetch(:slack_token)}"
+    "/event/deploy"
   }
 
   set :slack_path, -> { fetch(:slack_post_message_api_endpoint) }
@@ -38,6 +44,8 @@ namespace :slack do
       username: fetch(:slack_username),
       channel: fetch(:slack_channel),
       icon_url: fetch(:slack_icon_url),
+      deployer: fetch(:slack_deployer),
+      deployer_email: fetch(:slack_deployer_email),
       text: '',
       link_names: 1,
       mrkdwn: true
@@ -53,6 +61,9 @@ namespace :slack do
       title: fetch(:application),
       text: text,
       fallback: text,
+      branch: fetch(:branch),
+      revision: fetch(:current_revision),
+      stage: fetch(:slack_stage),
       mrkdwn_in: ['text']
     }]
 
@@ -72,6 +83,9 @@ namespace :slack do
         title: fetch(:application),
         text: text,
         fallback: text,
+        branch: fetch(:branch),
+        revision: fetch(:current_revision),
+        stage: fetch(:slack_stage),
         mrkdwn_in: ['text']
     }]
 
@@ -92,6 +106,9 @@ namespace :slack do
       title: fetch(:application),
       text: text,
       fallback: text,
+      branch: fetch(:branch),
+      revision: fetch(:current_revision),
+      stage: fetch(:slack_stage),
       mrkdwn_in: ['text']
     }]
 
